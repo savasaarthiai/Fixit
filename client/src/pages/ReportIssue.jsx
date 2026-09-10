@@ -41,7 +41,7 @@ export default function ReportIssue() {
 
     const { getRootProps, getInputProps, isDragActive } = useDropzone({
         onDrop, accept: { 'image/*': ['.jpeg', '.jpg', '.png', '.webp', '.gif'] },
-        maxFiles: 5, maxSize: 10 * 1024 * 1024
+        maxFiles: 5, maxSize: 50 * 1024 * 1024
     });
 
     const removePhoto = (idx) => {
@@ -235,8 +235,12 @@ export default function ReportIssue() {
                                         onChange={(e) => {
                                             const file = e.target.files?.[0];
                                             if (file) {
-                                                const photoFile = Object.assign(file, { preview: URL.createObjectURL(file) });
-                                                setPhotos(prev => [...prev, photoFile].slice(0, 5));
+                                                if (file.size > 50 * 1024 * 1024) {
+                                                    toast.error('File exceeds 50MB limit');
+                                                } else {
+                                                    const photoFile = Object.assign(file, { preview: URL.createObjectURL(file) });
+                                                    setPhotos(prev => [...prev, photoFile].slice(0, 5));
+                                                }
                                             }
                                             e.target.value = '';
                                         }}
@@ -252,7 +256,14 @@ export default function ReportIssue() {
                                         style={{ display: 'none' }}
                                         onChange={(e) => {
                                             const files = Array.from(e.target.files || []);
-                                            const newPhotos = files.map(file => Object.assign(file, { preview: URL.createObjectURL(file) }));
+                                            const validFiles = files.filter(f => {
+                                                if (f.size > 50 * 1024 * 1024) {
+                                                    toast.error(`File ${f.name} exceeds 50MB limit`);
+                                                    return false;
+                                                }
+                                                return true;
+                                            });
+                                            const newPhotos = validFiles.map(file => Object.assign(file, { preview: URL.createObjectURL(file) }));
                                             setPhotos(prev => [...prev, ...newPhotos].slice(0, 5));
                                             e.target.value = '';
                                         }}
@@ -268,7 +279,7 @@ export default function ReportIssue() {
                                 <div className="dropzone-text">
                                     Or <strong>drag and drop</strong> photos here
                                 </div>
-                                <div className="dropzone-hint">JPEG, PNG, WebP, GIF up to 10MB • {5 - photos.length} slots remaining</div>
+                                <div className="dropzone-hint">JPEG, PNG, WebP, GIF up to 50MB • {5 - photos.length} slots remaining</div>
                             </div>
                             {photos.length > 0 && (
                                 <div className="photo-previews">
